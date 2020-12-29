@@ -11,6 +11,7 @@ import {
   ParseIntPipe,
   Query,
   UsePipes,
+  UseInterceptors,
 } from '@nestjs/common';
 import { of, Observable } from 'rxjs';
 import { CreateCatDto } from './create-cat.dto';
@@ -18,12 +19,13 @@ import { Cat } from './interfaces/cat.interface';
 import { CatsService } from './cats.service';
 import { HttpExceptionFilter } from './http-exception.filter';
 import { JoiValidationPipe, createCateSchema } from './validation.pipe';
+import { LoggingInterceptor } from './logging.interceptor';
 
 @Controller('cats')
 export class CatsController {
   constructor(private catsService: CatsService) {}
 
-  @Get()
+  @Get('/:id')
   async findOne(
     @Query(
       'id',
@@ -43,11 +45,19 @@ export class CatsController {
 
   @Get()
   @UseFilters(HttpExceptionFilter)
+  @UseInterceptors(LoggingInterceptor)
   async findAll() {
     console.log('$ findAll');
-    throw new ForbiddenException();
-
+    if (Math.random() < 0.9) {
+      await wait(6000);
+    }
     // return new HttpException({ abc: '123' }, HttpStatus.FORBIDDEN);
-    // return this.catsService.findAll();
+    return this.catsService.findAll();
   }
+}
+
+function wait(ms = 1000) {
+  return new Promise((ok) => {
+    setTimeout(ok, ms);
+  });
 }
